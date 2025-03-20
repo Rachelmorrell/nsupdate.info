@@ -1,0 +1,11 @@
+linters:
+  flake8:
+    fixer: true
+  shellcheck:
+    shell: bash
+  csslint: {  }
+files:
+  ignore:
+    - 'bower_components/*'
+fixers:
+  enable: true
