@@ -10,12 +10,12 @@ Use https for the web interface as well as for the update client (if possible).
 Otherwise, your username / password (FQDN / update secret) will be transmitted
 in clear text (unencrypted).
 
-The web interface will warn you if you use it via http. If WE_HAVE_TLS is
+The web interface will warn you if you use it via http. If ``WE_HAVE_TLS`` is
 set to True, it will suggest you better use the https site and link there.
 
 Additionally, the service administrator can implement a redirect from the
-http to the https site within the webserver configuration for the WWW_HOST.
-The redirect should **not** be implemented for WWW_IPV4_HOST and WWW_IPV6_HOST
+http to the https site within the web server configuration for the ``WWW_HOST``.
+The redirect should **not** be implemented for ``WWW_IPV4_HOST`` and ``WWW_IPV6_HOST``
 as it is unknown whether all update clients can deal with a redirect (and
 support TLS).
 
@@ -34,7 +34,7 @@ tell you a wrong IP, which your updater then would happily write into DNS.
 Login with remote vs. local Account
 ===================================
 
-If you use a already existing remote account to log in into our service, you
+If you use an already existing remote account to log in to our service, you
 don't need to create a local profile (with username, E-Mail and password).
 
 That way, we need to store less information about you - especially no password
@@ -62,12 +62,9 @@ Interactive login password
 We recommend that you use a rather strong and not guessable password for this.
 Do not re-use passwords, use a password system or a password manager.
 
-The interactive login password for the web site is stored using Django's
-default hasher mechanism, which is currently pbkdf2 (a very strong and
-intentionally slow password hash). Brute-Force attacks against such hashes are
-very slow, much slower than against simple hashes like (s)sha1/sha256 etc.
-
-It is NOT stored in clear text by nsupdate.info.
+The interactive login password for the web site is stored using a strong argon2
+hasher when using the ``PASSWORD_HASHERS`` setting as we provide it in
+``nsupdate.settings.base``.
 
 If you lose the password, you'll have to do a password reset via e-mail.
 
@@ -76,17 +73,13 @@ Automated update secret
 -----------------------
 
 The automated update secret for routers or other update clients is a
-random and automatically generated secret. We store it using the sha1 hasher
-of Django (which in fact is salted-sha1, a not very strong, but fast-to-compute
-hash).
+random and automatically generated secret. We store it using a weak argon2
+hasher.
 
-Considering that a lot of routers or update clients store this secret in clear
-text in their configuration and often transmit it using unencrypted http (and
-not https), this secret is not too safe anyway. We also wanted to save some cpu
-cycles here and rather not use pbkdf2 for this regularly and automatically used
-secret.
-
-It is not stored in clear text by nsupdate.info.
+The hasher is intentionally relatively weak compared to the standard (strong)
+argon2 hasher to avoid server overload and slow processing of dyndns update
+requests. It is still about 1000x stronger than the salted-sha1 we used in the
+past.
 
 If you lose the secret, you'll have to generate a new one and change it in your
 update client also.
@@ -151,14 +144,14 @@ The software ("as is") uses these cookies:
 * "sessionid" (host-only, to keep the session when you have logged-in to the
   web interface)
 
-If you have set WE_HAVE_TLS to True (because you run the software on a https
-site), you should also set *_COOKIE_SECURE to True to avoid the cookies getting
+If you have set ``WE_HAVE_TLS`` to True (because you run the software on a https
+site), you should also set ``*_COOKIE_SECURE`` to True to avoid the cookies getting
 transmitted via http.
 
 We use a session cookie by default (gets cleared when you close the browser).
 If you check the "Keep me logged in" checkbox on the login screen, then we'll
 set a permanent cookie with a lifetime as configured by the site admin
-(SESSION_COOKIE_AGE, default: 14 days).
+(``SESSION_COOKIE_AGE``, default: 14 days).
 
 Be careful with domain cookies
 ------------------------------
@@ -180,14 +173,14 @@ faking domain cookies.
 Django's SECRET_KEY
 ===================
 
-Django's SECRET_KEY needs to be a long, random and secret string (it is
+Django's ``SECRET_KEY`` needs to be a long, random and secret string (it is
 usually set up by the administrator of the site).
 
-The builtin default settings will try to read SECRET_KEY from an environment
-variable of same name. If there is no such environment variable, the SECRET_KEY
+The built-in default settings will try to read ``SECRET_KEY`` from an environment
+variable of same name. If there is no such environment variable, the ``SECRET_KEY``
 will be undefined.
 
-You can also define the SECRET_KEY in your local_settings.py.
+You can also define the ``SECRET_KEY`` in your local_settings.py.
 
-If you do not define a SECRET_KEY by one of these methods, the application
-will refuse to start and give you an error, that a SECRET_KEY is required.
+If you do not define a ``SECRET_KEY`` by one of these methods, the application
+will refuse to start and give you an error, that a ``SECRET_KEY`` is required.

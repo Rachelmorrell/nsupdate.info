@@ -1,8 +1,9 @@
 """
-models for hosts, domains, service updaters, ...
+Models for hosts, domains, and service updaters.
 """
 
 import re
+import secrets
 import time
 import base64
 
@@ -10,16 +11,13 @@ import dns.resolver
 import dns.message
 
 from django.db import models
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.conf import settings
 from django.db.models.signals import pre_delete, post_save
 from django.contrib.auth.hashers import make_password
 from django.utils.timezone import now
-from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import python_2_unicode_compatible
-from django.utils.six import text_type
+from django.utils.translation import gettext_lazy as _
 
 from . import dnstools
 
@@ -28,19 +26,22 @@ RESULT_MSG_LEN = 255
 
 def result_fmt(msg):
     """
-    format the message for storage into client/server_result_msg fields
+    Format the message for storage in client/server_result_msg fields.
     """
     msg = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(time.time())) + ' ' + msg
     return msg[:RESULT_MSG_LEN]
 
 
-@python_2_unicode_compatible
+def make_random_password(length=10, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'):
+    return ''.join(secrets.choice(allowed_chars) for _ in range(length))
+
+
 class BlacklistedHost(models.Model):
     name_re = models.CharField(
-        _('name RegEx'),
+        _('name regex'),
         max_length=255,
         unique=True,
-        help_text=_('Blacklisted domain. Evaluated as regex (search).'))
+        help_text=_('Blacklisted domain. Evaluated as a regex (search).'))
 
     last_update = models.DateTimeField(_('last update'), auto_now=True)
     created = models.DateTimeField(_('created at'), auto_now_add=True)
@@ -60,12 +61,12 @@ class BlacklistedHost(models.Model):
 def host_blacklist_validator(value):
     for bd in BlacklistedHost.objects.all():
         if re.search(bd.name_re, value):
-            raise ValidationError(u'This name is blacklisted')
+            raise ValidationError(u'This name is blacklisted.')
 
 
 from collections import namedtuple
 
-UpdateAlgorithm = namedtuple("update_algorithm", "bitlength bind_name")
+UpdateAlgorithm = namedtuple("UpdateAlgorithm", "bitlength bind_name")
 
 UPDATE_ALGORITHM_DEFAULT = 'HMAC_SHA512'
 UPDATE_ALGORITHMS = {
@@ -81,7 +82,6 @@ UPDATE_ALGORITHMS = {
 UPDATE_ALGORITHM_CHOICES = [(k, k) for k in UPDATE_ALGORITHMS]
 
 
-@python_2_unicode_compatible
 class Domain(models.Model):
     name = models.CharField(
         _("name"),
@@ -123,9 +123,9 @@ class Domain(models.Model):
     comment = models.CharField(
         _("comment"),
         max_length=255,  # should be enough
-        default='', blank=True, null=True,
+        default='', blank=True,
         help_text=_("Some arbitrary comment about your domain. "
-                    "If your domain is public, the comment will be also publicly shown."))
+                    "If your domain is public, the comment will also be publicly shown."))
 
     last_update = models.DateTimeField(_("last update"), auto_now=True)
     created = models.DateTimeField(_("created at"), auto_now_add=True)
@@ -138,8 +138,7 @@ class Domain(models.Model):
     def generate_ns_secret(self):
         algorithm = self.nameserver_update_algorithm
         bitlength = UPDATE_ALGORITHMS[algorithm].bitlength
-        user_model = get_user_model()
-        secret = user_model.objects.make_random_password(length=bitlength // 8)
+        secret = make_random_password(length=bitlength // 8)
         secret = secret.encode('utf-8')
         self.nameserver_update_secret = secret_base64 = base64.b64encode(secret).decode('utf-8')
         self.save()
@@ -154,7 +153,6 @@ class Domain(models.Model):
         ordering = ('name',)
 
 
-@python_2_unicode_compatible
 class Host(models.Model):
     name = models.CharField(
         _("name"),
@@ -170,13 +168,13 @@ class Host(models.Model):
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE, verbose_name=_("domain"))
     update_secret = models.CharField(
         _("update secret"),
-        max_length=64,  # secret gets hashed (on save) to salted sha1, 58 bytes str len
+        max_length=128,  # secret gets hashed (on save) to salted sha1, "sha1" + "$" + 22 chars salt + "$" + 40 chars sha1 = 68 chars
     )
     comment = models.CharField(
         _("comment"),
         max_length=255,  # should be enough
-        default='', blank=True, null=True,
-        help_text=_("Some arbitrary comment about your host, e.g  who / what / where this host is"))
+        default='', blank=True,
+        help_text=_("Some arbitrary comment about your host, e.g. who / what / where this host is"))
 
     # available means that this host may be updated (or not, if False) -
     # gets set to False if abuse happens (client malfunctioning) or
@@ -219,7 +217,7 @@ class Host(models.Model):
     client_result_msg = models.CharField(
         _("client result msg"),
         max_length=RESULT_MSG_LEN,
-        default='', blank=True, null=True,
+        default='', blank=True,
         help_text=_("Latest result message relating to the client"))
 
     # count server faults that happened when updating this host
@@ -227,7 +225,7 @@ class Host(models.Model):
     server_result_msg = models.CharField(
         _("server result msg"),
         max_length=RESULT_MSG_LEN,
-        default='', blank=True, null=True,
+        default='', blank=True,
         help_text=_("Latest result message relating to the server"))
 
     # count api auth errors - maybe caused by host owner (misconfigured update client)
@@ -235,7 +233,7 @@ class Host(models.Model):
     api_auth_result_msg = models.CharField(
         _("api auth result msg"),
         max_length=RESULT_MSG_LEN,
-        default='', blank=True, null=True,
+        default='', blank=True,
         help_text=_("Latest result message relating to api authentication"))
 
     # when we received the last update for v4/v6 addr
@@ -258,8 +256,9 @@ class Host(models.Model):
         return u"%s.%s" % (self.name, self.domain.name)
 
     class Meta(object):
-        unique_together = (('name', 'domain'),)
-        index_together = (('name', 'domain'),)
+        constraints = [
+            models.UniqueConstraint(fields=['name', 'domain'], name='unique_host_domain'),
+        ]
         verbose_name = _('host')
         verbose_name_plural = _('hosts')
         ordering = ('domain', 'name')  # groupby domain and sort by name
@@ -270,15 +269,15 @@ class Host(models.Model):
     @classmethod
     def get_by_fqdn(cls, fqdn, **kwargs):
         # Assuming subdomain has no dots (.) the fqdn is split at the first dot
-        splitted = fqdn.split('.', 1)
-        if len(splitted) != 2:
+        fqdn_parts = fqdn.split('.', 1)
+        if len(fqdn_parts) != 2:
             raise ValueError("get_by_fqdn(%s): FQDN has to contain (at least) one dot" % fqdn)
         try:
-            host = Host.objects.get(name=splitted[0], domain__name=splitted[1], **kwargs)
+            host = Host.objects.get(name=fqdn_parts[0], domain__name=fqdn_parts[1], **kwargs)
         except Host.DoesNotExist:
             return None
         except Host.MultipleObjectsReturned:
-            # should not happen, see Meta.unique_together
+            # should not happen, see Meta.constraints
             raise ValueError("get_by_fqdn(%s) found more than 1 host" % fqdn)
         else:
             return host
@@ -327,16 +326,17 @@ class Host(models.Model):
         self.save()
 
     def generate_secret(self, secret=None):
-        # note: we use a quick hasher for the update_secret as expensive
-        # more modern hashes might put too much load on the servers. also
-        # many update clients might use http without tls, so it is not too
-        # secure anyway.
+        # note: we use a quick hasher for the update_secret as expensive,
+        # more secure hashes might put too much load on the servers.
+        # we deal with lots of automated requests here, and not all update
+        # clients are well-behaved.
         if secret is None:
-            user_model = get_user_model()
-            secret = user_model.objects.make_random_password()
+            secret = make_random_password()
+        # Because Django removed the "sha1" hasher we used in the past AND we need something
+        # fast for the update secrets, we want "weakargon2" now.
         self.update_secret = make_password(
             secret,
-            hasher='sha1'
+            hasher='weakargon2'
         )
         self.save()
         return secret
@@ -373,7 +373,6 @@ def post_save_host(sender, **kwargs):
 post_save.connect(post_save_host, sender=Host)
 
 
-@python_2_unicode_compatible
 class RelatedHost(models.Model):
     # host addr = network_of_main_host + interface_id
     name = models.CharField(
@@ -389,8 +388,8 @@ class RelatedHost(models.Model):
     comment = models.CharField(
         _("comment"),
         max_length=255,  # should be enough
-        default='', blank=True, null=True,
-        help_text=_("Some arbitrary comment about your host, e.g  who / what / where this host is"))
+        default='', blank=True,
+        help_text=_("Some arbitrary comment about your host, e.g. who / what / where this host is"))
     interface_id_ipv4 = models.CharField(
         _("interface ID IPv4"),
         default='', blank=True, null=True,
@@ -414,10 +413,12 @@ class RelatedHost(models.Model):
         verbose_name=_("main host"))
 
     def __str__(self):
-        return u"%s.%s" % (self.name, text_type(self.main_host))
+        return u"%s.%s" % (self.name, str(self.main_host))
 
     class Meta(object):
-        unique_together = (('name', 'main_host'),)
+        constraints = [
+            models.UniqueConstraint(fields=['name', 'main_host'], name='unique_relatedhost_name_mainhost'),
+        ]
         verbose_name = _('related host')
         verbose_name_plural = _('related hosts')
         ordering = ('main_host', 'name')
@@ -447,7 +448,6 @@ class RelatedHost(models.Model):
 pre_delete.connect(pre_delete_host, sender=RelatedHost)
 
 
-@python_2_unicode_compatible
 class ServiceUpdater(models.Model):
     name = models.CharField(
         _("name"),
@@ -456,7 +456,7 @@ class ServiceUpdater(models.Model):
     comment = models.CharField(
         _("comment"),
         max_length=255,  # should be enough
-        default='', blank=True, null=True,
+        default='', blank=True,
         help_text=_("Some arbitrary comment about the service"))
     server = models.CharField(
         _("server"),
@@ -491,7 +491,6 @@ class ServiceUpdater(models.Model):
         verbose_name_plural = _('service updaters')
 
 
-@python_2_unicode_compatible
 class ServiceUpdaterHostConfig(models.Model):
     service = models.ForeignKey(ServiceUpdater, on_delete=models.CASCADE, verbose_name=_("service"))
 
@@ -503,7 +502,7 @@ class ServiceUpdaterHostConfig(models.Model):
     comment = models.CharField(
         _("comment"),
         max_length=255,  # should be enough
-        default='', blank=True, null=True,
+        default='', blank=True,
         help_text=_("Some arbitrary comment about your host on that service"))
     # credentials for http basic auth for THAT service (not for us),
     # we need to store the password in plain text, we can't hash it

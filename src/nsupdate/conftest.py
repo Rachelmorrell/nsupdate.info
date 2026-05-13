@@ -3,11 +3,8 @@ configuration for the (py.test based) tests
 """
 
 import pytest
-
 from random import randint
-
 from nsupdate.main.dnstools import FQDN
-
 from django.conf import settings
 
 # this is to create a Domain entries in the database, so they can be used for unit tests:
@@ -33,14 +30,24 @@ PASSWORD = 'pass'
 HOSTNAME = 'nsupdate-ddns-client-unittest.' + BASEDOMAIN
 _PASSWORD = 'yUTvxjRwNu'  # no problem, is only used for this unit test
 SERVER = 'ipv4.' + BASEDOMAIN
-SECURE = False  # TLS/SNI support on python 2.x sucks :(
+SECURE = False  # Do not use TLS for these tests.
+
+
+# Values above can locally be overridden by a local_test_settings.py in the PYTHONPATH .
+# This file is gitignored, similarly to local_settings.py . For example, by running test with a different BASE_DOMAIN,
+# enter a line "BASE_DOMAIN=your.alternate.domain" into local_test_settings.py . This file can be anywhere in the PYTHONPATH.
+
+try:
+    from local_test_settings import *
+except ImportError:
+    pass
+
 
 from django.utils.translation import activate
-
 from nsupdate.main.dnstools import update_ns, FQDN
 
 
-@pytest.yield_fixture(scope="function")
+@pytest.fixture(scope="function")
 def ddns_hostname():
     """
     get a random hostname for tests and make sure it is removed from dns
@@ -53,7 +60,7 @@ def ddns_hostname():
     update_ns(fqdn, 'AAAA', action='del')
 
 
-@pytest.yield_fixture(scope="function")
+@pytest.fixture(scope="function")
 def ddns_fqdn(ddns_hostname):
     yield FQDN(ddns_hostname, TESTDOMAIN)
 

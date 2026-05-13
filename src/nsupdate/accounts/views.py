@@ -5,12 +5,10 @@ from django.contrib.auth import logout
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_protect
-from django.views.decorators.debug import sensitive_post_parameters
 from django.urls import reverse, reverse_lazy
 from django.shortcuts import redirect
 from django.contrib import messages
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import update_session_auth_hash
 
 from .forms import UserForm, UserProfileForm
@@ -88,8 +86,8 @@ class DeleteUserView(TemplateView):
     def post(self, request, *args, **kwargs):
         user = request.user
         if user.is_active:
-            # if admin set the user to inactive, the user may not delete his own account
-            # this is important for abuse handling: abusers shall not be able to delete
+            # If an admin set the user to inactive, the user may not delete their own account.
+            # This is important for abuse handling: abusers shall not be able to delete
             # their account (and all hosts/domains) and then just recreate them without
             # abuse_blocked flags set by the admin.
             user.delete()

@@ -1,5 +1,5 @@
 {% extends "registration/registration_base.html" %}
-{% load i18n %}{% load bootstrap %}
+{% load i18n %}{% load django_bootstrap5 %}
 {% url 'auth_login' as auth_login_url %}
 {% block title %}{% if account %}{% trans "Activation complete" %}{% else %}{% trans "Activation problem" %}{% endif %}{% endblock %}
 
@@ -10,6 +10,6 @@
     <p><a href="{{ login_url }}"><button class="btn btn-primary" type="button">{% trans "Log in" %}</button></a></p>
 {% else %}
     <h2>{% trans 'Oops' %}</h2>
-    <p>{% trans 'it seems that your activation key is invalid.  Please check the url again.' %}</p>
+    <p>{% trans 'It seems that your activation key is invalid. Please check the URL again.' %}</p>
 {% endif %}
 {% endblock %}

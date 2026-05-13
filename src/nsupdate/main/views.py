@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-views for the interactive web user interface
+Views for the interactive web user interface.
 """
 
-import socket
 from datetime import timedelta
 
 import dns.name
 
 from django.db.models import Q
-from django.views.generic import View, TemplateView, CreateView
+from django.views.generic import View, TemplateView, CreateView, DetailView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
@@ -29,9 +28,8 @@ from .forms import (CreateHostForm, EditHostForm, CreateRelatedHostForm, EditRel
 from .models import Host, RelatedHost, Domain, ServiceUpdaterHostConfig
 
 
-class GenerateSecretView(UpdateView):
+class GenerateSecretView(DetailView):
     model = Host
-    fields = "__all__"
     template_name = "main/generate_secret.html"
 
     @method_decorator(login_required)
@@ -53,9 +51,8 @@ class GenerateSecretView(UpdateView):
         return context
 
 
-class GenerateNSSecretView(UpdateView):
+class GenerateNSSecretView(DetailView):
     model = Domain
-    fields = "__all__"
     template_name = "main/generate_ns_secret.html"
 
     @method_decorator(login_required)
@@ -166,12 +163,13 @@ class JsUpdateView(TemplateView):
     template_name = "main/update.html"
 
     def get(self, request, *args, **kwargs):
-        auth = request.META.get('HTTP_AUTHORIZATION')
+        auth = request.headers.get('authorization')
         if auth is None:
             return basic_challenge("authenticate to update DNS", 'badauth')
-        username, password = basic_authenticate(auth)
-        self.hostname = username
-        self.secret = password
+        creds = basic_authenticate(auth)
+        if not creds:
+            return basic_challenge("authenticate to update DNS", 'badauth')
+        self.hostname, self.secret = creds
         return super(JsUpdateView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -195,7 +193,7 @@ class OverviewView(TemplateView):
             .only("name", "comment", "available", "client_faults", "server_faults", "abuse_blocked", "abuse",
                   "last_update_ipv4", "tls_update_ipv4", "last_update_ipv6", "tls_update_ipv6", "domain__name")
         context['your_domains'] = Domain.objects.filter(
-            created_by=self.request.user).select_related("created_by__profile")\
+            created_by=self.request.user).select_related("created_by")\
             .only("name", "public", "available", "comment", "created_by__username")
         context['public_domains'] = Domain.objects.filter(
             public=True).exclude(created_by=self.request.user).select_related("created_by")\
@@ -240,7 +238,7 @@ class AddHostView(CreateView):
             success, level, msg = False, messages.ERROR, 'Host already exists in DNS.'
         except dnstools.DNSException as e:
             success, level, msg = False, messages.ERROR, 'DNSException [%s]' % str(e)
-        except socket.error as err:
+        except OSError as err:  # was: socket.error (deprecated)
             success, level, msg = False, messages.ERROR, 'Communication to name server failed [%s]' % str(err)
         else:
             self.object.created_by = self.request.user
@@ -301,7 +299,7 @@ class DeleteHostView(DeleteView):
     def get_object(self, *args, **kwargs):
         obj = super(DeleteHostView, self).get_object(*args, **kwargs)
         if obj.created_by != self.request.user or obj.abuse_blocked:
-            # disallow deletion if abuse_blocked is set, otherwise the
+            # Disallow deletion if abuse_blocked is set; otherwise, the
             # abuser can just delete and recreate the host
             raise Http404
         return obj
@@ -630,7 +628,7 @@ Disallow: /updater_hostconfig_overview/
 
 def csrf_failure_view(request, reason):  # pragma: no cover (hard to test)
     """
-    Django's CSRF middleware's builtin view doesn't tell the user that he needs to have cookies enabled.
+    Django's CSRF middleware's built-in view doesn't tell the user that he needs to have cookies enabled.
 
     :param request: django request object
     :param reason: why the csrf check failed

@@ -1,11 +1,11 @@
 """
-Tests for api package.
+Tests for the API package.
 """
 
 import pytest
 
 import base64
-from netaddr import IPSet, IPAddress, IPNetwork
+from netaddr import IPSet, IPAddress
 
 from django.urls import reverse
 
@@ -13,7 +13,7 @@ from nsupdate.main.dnstools import query_ns, FQDN
 from nsupdate.main.models import Domain
 from nsupdate.api.views import basic_authenticate
 
-from conftest import TESTDOMAIN, TEST_HOST, TEST_HOST_RELATED, TEST_HOST2, TEST_SECRET, TEST_SECRET2
+from nsupdate.conftest import TESTDOMAIN, TEST_HOST, TEST_HOST_RELATED, TEST_HOST2, TEST_SECRET
 
 USERNAME = 'test'
 PASSWORD = 'pass'
@@ -36,23 +36,20 @@ def test_nic_update_noauth(client):
 
 def make_basic_auth_header(username, password):
     """
-    create a basic authentication header
+    Create a Basic Authentication header.
 
-    :param username: user name [unicode on py2, str on py3]
-    :param password: password [unicode on py2, str on py3]
-    :return: basic auth header [str on py2, str on py3]
+    :param username: Username (str)
+    :param password: Password (str)
+    :return: Basic auth header (str)
     """
-    # note: the coding dance in the next lines is to make sure we get str type
-    # on python 2 as well as on python 3 as str is the type we get in the auth
-    # object when practically running with a real web server.
-    user_pass = u'%s:%s' % (username, password)
-    return 'Basic ' + str(base64.b64encode(user_pass.encode('utf-8')).decode('ascii'))
+    token = base64.b64encode(f"{username}:{password}".encode()).decode()
+    return f"Basic {token}"
 
 
 def test_basic_auth():
     user_pass = "username", "secret"
     h = make_basic_auth_header(*user_pass)
-    assert isinstance(h, str)  # must be str on py2, must be str on py3!
+    assert isinstance(h, str)
     assert basic_authenticate(h) == user_pass
 
 
@@ -67,7 +64,7 @@ def test_nic_update_authorized_nonexistent_host(client):
     response = client.get(reverse('nic_update') + '?hostname=nonexistent.nsupdate.info',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
-    # we must not get this updated, it doesn't exist in the database:
+    # We must not get this updated; it doesn't exist in the database.
     assert response.content == b'nohost'
 
 
@@ -75,7 +72,7 @@ def test_nic_update_authorized_foreign_host(client):
     response = client.get(reverse('nic_update') + '?hostname=%s' % (TEST_HOST2, ),
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
-    # we must not get this updated, this is a host of some other user!
+    # We must not get this updated; this is a host of some other user!
     assert response.content == b'nohost'
 
 
@@ -111,20 +108,20 @@ def test_nic_update_authorized(client):
     response = client.get(reverse('nic_update'),
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
-    # we don't care whether it is nochg or good, but should be one of them:
+    # We don't care whether it is nochg or good, but it should be one of them.
     content = response.content.decode('utf-8')
     assert content.startswith('good ') or content.startswith('nochg ')
 
 
 def test_nic_update_authorized_ns_unavailable(client):
     d = Domain.objects.get(name=TESTDOMAIN)
-    d.available = False  # simulate DNS unavailability
+    d.available = False  # Simulate DNS unavailability.
     d.save()
-    # prepare: we must make sure the real test is not a nochg update
+    # Prepare: We must make sure the real test is not a nochg update.
     response = client.get(reverse('nic_update') + '?myip=1.2.3.4',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
-    # now do the real test: ip changed, but we can't update DNS as it is unavailable
+    # Now do the real test: IP changed, but we can't update DNS as it is unavailable.
     response = client.get(reverse('nic_update') + '?myip=4.3.2.1',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
@@ -135,19 +132,19 @@ def test_nic_update_authorized_myip_v4(client):
     response = client.get(reverse('nic_update') + '?myip=4.3.2.1',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
-    # we don't care whether it is nochg or good, but should be the ip from myip=...:
+    # We don't care whether it is nochg or good, but it should be the IP from myip=....
     assert response.content in [b'good 4.3.2.1', b'nochg 4.3.2.1']
     response = client.get(reverse('nic_update') + '?myip=1.2.3.4',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
-    # must be good (was different IP)
+    # Must be good (was different IP).
     assert response.content == b'good 1.2.3.4'
     response = client.get(reverse('nic_update') + '?myip=1.2.3.4',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
-    # must be nochg (was same IP)
+    # Must be nochg (was same IP).
     assert response.content == b'nochg 1.2.3.4'
-    # now check if it updated the ipv4 related hosts also:
+    # Now check if it updated the IPv4 related hosts also:
     assert query_ns(TEST_HOST_RELATED, 'A') == '1.2.3.1'  # 1.2.3.4/29 + 0.0.0.1
 
 
@@ -155,19 +152,19 @@ def test_nic_update_authorized_myip_v6(client):
     response = client.get(reverse('nic_update') + '?myip=2000::2',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
-    # we don't care whether it is nochg or good, but should be the ip from myip=...:
+    # We don't care whether it is nochg or good, but it should be the IP from myip=....
     assert response.content in [b'good 2000::2', b'nochg 2000::2']
     response = client.get(reverse('nic_update') + '?myip=2000::3',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
-    # must be good (was different IP)
+    # Must be good (was different IP).
     assert response.content == b'good 2000::3'
     response = client.get(reverse('nic_update') + '?myip=2000::3',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
-    # must be nochg (was same IP)
+    # Must be nochg (was same IP).
     assert response.content == b'nochg 2000::3'
-    # now check if it updated the ipv4 related hosts also:
+    # Now check if it updated the IPv6 related hosts also:
     assert query_ns(TEST_HOST_RELATED, 'AAAA') == '2000::1'  # 2000::3/64 + ::1
 
 
@@ -176,23 +173,23 @@ def test_nic_update_authorized_update_other_services(client):
     response = client.get(reverse('nic_update') + '?myip=4.3.2.1',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
-    # we don't care whether it is nochg or good, but should be the ip from myip=...:
+    # We don't care whether it is nochg or good, but it should be the IP from myip=....
     assert response.content in [b'good 4.3.2.1', b'nochg 4.3.2.1']
     response = client.get(reverse('nic_update') + '?myip=1.2.3.4',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
-    # must be good (was different IP)
+    # Must be good (was different IP).
     assert response.content == b'good 1.2.3.4'
-    # XXX test below can not run in parallel (like on travis-ci.org) if updating same
-    # "other service" target host
-    # now check if it updated the other service also:
+    # XXX The test below cannot run in parallel (like on GitHub) if updating the same
+    # "other service" target host.
+    # Now check if it updated the other service also:
     assert query_ns(TEST_HOST_OTHER, 'A') == '1.2.3.4'
     response = client.get(reverse('nic_update') + '?myip=2.3.4.5',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
-    # must be good (was different IP)
+    # Must be good (was different IP).
     assert response.content == b'good 2.3.4.5'
-    # now check if it updated the other service also:
+    # Now check if it updated the other service also:
     assert query_ns(TEST_HOST_OTHER, 'A') == '2.3.4.5'
 
 
@@ -207,13 +204,13 @@ def test_nic_update_authorized_badagent(client, settings):
 
 def test_nic_update_authorized_badip(client, settings):
     settings.BAD_IPS_HOST = IPSet([IPAddress('7.7.7.7'), ])
-    # normal update, not on blacklist
+    # Normal update, not on the blacklist.
     response = client.get(reverse('nic_update') + '?myip=1.2.3.4',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
     content = response.content.decode('utf-8')
     assert content.startswith('good ') or content.startswith('nochg ')
-    # abusive update, ip on blacklist
+    # Abusive update; IP on the blacklist.
     response = client.get(reverse('nic_update') + '?myip=7.7.7.7',
                           HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
     assert response.status_code == 200
@@ -222,14 +219,14 @@ def test_nic_update_authorized_badip(client, settings):
 
 def test_nic_update_session_nosession(client):
     response = client.get(reverse('nic_update_authorized'))
-    assert response.status_code == 302  # redirects to login view
+    assert response.status_code == 302  # Redirects to the login view.
 
 
 def test_nic_update_session_no_hostname(client):
     client.login(username=USERNAME, password=PASSWORD)
     response = client.get(reverse('nic_update_authorized'))
     assert response.status_code == 200
-    assert response.content == b'nohost'  # we did not tell which host
+    assert response.content == b'nohost'  # We did not specify which host.
 
 
 def test_nic_update_session(client):
@@ -252,7 +249,7 @@ def test_nic_update_session_foreign_host(client):
     client.login(username=USERNAME, password=PASSWORD)
     response = client.get(reverse('nic_update_authorized') + '?hostname=%s' % (TEST_HOST2, ))
     assert response.status_code == 200
-    # we must not get this updated, this is a host of some other user!
+    # We must not get this updated; this is a host of some other user!
     assert response.content == b'nohost'
 
 
@@ -309,3 +306,57 @@ def test_detect_ip_invalid_session(client):
 def test_ajax_get_ips(client):
     response = client.get(reverse('ajax_get_ips'))
     assert response.status_code == 200
+
+
+def test_nic_update_multiple_ips(client):
+    # Test with multiple IPs (v4 and v6)
+    # 1. Clean case: both good (using new IPs)
+    v4 = '1.2.3.4'
+    v6 = '2001:db8::1'
+    myip = f'{v4},{v6}'
+    response = client.get(reverse('nic_update') + f'?myip={myip}',
+                          HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
+    assert response.status_code == 200
+    content = response.content.decode('utf-8')
+    if content == 'dnserr':
+        pytest.skip("DNS server not available in test environment")
+    assert content == f'good {v4},{v6}'
+
+    # 2. Clean case: both nochg
+    response = client.get(reverse('nic_update') + f'?myip={myip}',
+                          HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
+    assert response.status_code == 200
+    content = response.content.decode('utf-8')
+    if content == 'dnserr':
+        pytest.skip("DNS server not available in test environment")
+    assert content == f'nochg {v4},{v6}'
+
+    # 3. Mixed case: one good, one nochg
+    v4_new = '1.2.3.5'
+    myip_mixed = f'{v4_new},{v6}'
+    response = client.get(reverse('nic_update') + f'?myip={myip_mixed}',
+                          HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
+    assert response.status_code == 200
+    content = response.content.decode('utf-8')
+    if content == 'dnserr':
+        pytest.skip("DNS server not available in test environment")
+    # _make_response returns multiple lines for mixed cases
+    assert content == f'good {v4_new}\nnochg {v6}'
+
+
+def test_nic_delete_multiple_ips(client):
+    # Test with multiple IPs (v4 and v6) for deletion
+    v4 = '1.2.3.4'
+    v6 = '2001:db8::1'
+    # First make sure they exist
+    client.get(reverse('nic_update') + f'?myip={v4},{v6}',
+               HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
+
+    myip = '0.0.0.0,::'  # DynDNS2 convention for deleting A and AAAA
+    response = client.get(reverse('nic_delete') + f'?myip={myip}',
+                          HTTP_AUTHORIZATION=make_basic_auth_header(TEST_HOST, TEST_SECRET))
+    assert response.status_code == 200
+    content = response.content.decode('utf-8')
+    if content == 'dnserr':
+        pytest.skip("DNS server not available in test environment")
+    assert content == 'deleted A,AAAA'

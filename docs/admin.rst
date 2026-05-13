@@ -29,7 +29,7 @@ Configuration
 nsupdate.info Service
 ---------------------
 
-First, please read the nsupdate/settings/*.py files - they contain a lot of
+First, please read the ``nsupdate/settings/*.py`` files - they contain a lot of
 settings you can use to customize your nsupdate.info installation. dev is for
 a development setup, prod is for a production setup and base has settings that
 are common for both.
@@ -41,16 +41,16 @@ to change afterwards.::
     from nsupdate.settings.dev import *
     SECRET_KEY='S3CR3T'
 
-IMPORTANT: you usually need to tell django what settings you want to use.
+IMPORTANT: you usually need to tell Django what settings you want to use.
 
 We won't document this for every single command in this documentation, but
-we'll assume that you either set DJANGO_SETTINGS_MODULE environment variable
+we'll assume that you either set ``DJANGO_SETTINGS_MODULE`` environment variable
 so it points to your settings module or that you give the --settings parameter
 additionally with all commands that need it::
 
     export DJANGO_SETTINGS_MODULE=local_settings  # this is YOUR settings file
     or
-    django-admin.py --settings=local_settings ...
+    django-admin --settings=local_settings ...
     python manage.py --settings=local_settings ...
 
 
@@ -67,7 +67,7 @@ Initialize the database
 
 To create and initialize the database, use::
 
-    python manage.py migrate
+    django-admin migrate
 
 
 Create the superuser account
@@ -75,7 +75,7 @@ Create the superuser account
 
 To create the user who is administrator of the service, use::
 
-    python manage.py createsuperuser
+    django-admin createsuperuser
 
 
 Start the development server
@@ -83,7 +83,7 @@ Start the development server
 
 ::
 
-    python manage.py runserver
+    django-admin runserver
 
 
 Nameserver
@@ -99,8 +99,8 @@ see the "Domains" section in the "user" part of the manual.
 Installation (for production)
 =============================
 
-You usually will use a production webserver like apache or nginx (not Django's
-builtin "runserver").
+You usually will use a production web server like Apache or Nginx (not Django's
+built-in "runserver").
 
 If you want to use a virtualenv: see the hints for development installation.
 
@@ -110,7 +110,7 @@ requirements file (will install less packages than for development)::
     pip install -r requirements.d/prod.txt
     pip install -e .
 
-Alternatively, you can just install the latest release from pypi::
+Alternatively, you can just install the latest release from PyPI::
 
     pip install nsupdate
 
@@ -125,25 +125,25 @@ Also, you will need to review the settings in the nsupdate.settings.prod
 module and override everything that is different for your setup into your
 local_settings.py file.
 
-Note: if you do not setup ALLOWED_HOSTS correctly, your will just see status
+Note: if you do not set up ``ALLOWED_HOSTS`` correctly, you will just see status
 400 errors.
 
 WSGI
 ----
 
-Module nsupdate.wsgi contains the wsgi "application" object.
+Module nsupdate.wsgi contains the WSGI "application" object.
 
-Please consult the webserver / django docs how to configure it and how to run
-django apps (wsgi apps) with the webserver you use.
+Please consult the web server / Django docs on how to configure it and how to run
+Django apps (WSGI apps) with the web server you use.
 
 Django has nice generic documentation about this, see there:
 
-https://docs.djangoproject.com/en/1.11/howto/deployment/
+https://docs.djangoproject.com/en/5.2/howto/deployment/
 
 Even if you do not follow or fully read the deployment guide, make sure that
 you at least read the checklist:
 
-https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
+https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 
 HTTP Basic Auth
@@ -159,25 +159,25 @@ web servers may need special settings for this::
 Static Files
 ------------
 
-As soon as you switch off DEBUG, Django won't serve static files any more,
+As soon as you switch off ``DEBUG``, Django won't serve static files any more,
 thus you need to arrange /static/ file serving by your web server.
 
 We assume here that you configured your web server to serve /static/ URL from
 /srv/nsupdate.info/htdocs/static/ directory.
 
 Django helps you to put all the static files into that directory, you just need
-to configure STATIC_ROOT for that::
+to configure ``STATIC_ROOT`` for that::
 
     STATIC_ROOT = '/srv/nsupdate.info/htdocs/static'
 
 And then, run this::
 
     umask 0022  # make sure group and others keep r and x, but not w
-    python manage.py collectstatic
+    django-admin collectstatic
 
-This will copy all the static files into STATIC_ROOT.
+This will copy all the static files into ``STATIC_ROOT``.
 
-Now, you must set DEBUG=False so it doesn't leak information from tracebacks
+Now, you must set ``DEBUG=False`` so it doesn't leak information from tracebacks
 to the outside world.
 
 Make sure your static files really work.
@@ -225,7 +225,7 @@ To make nsupdate.info (Django) use PostgreSQL, put this into YOUR settings::
     }
 
 
-Now proceed with manage migrate as shown above.
+Now proceed with django-admin migrate as shown above.
 
 Disable User Registration
 -------------------------
@@ -238,18 +238,18 @@ Customization of the Web UI
 
 You likely will need to customize the Web UI a bit, here is how.
 
-Overriding the builtin templates
---------------------------------
+Overriding the built-in templates
+---------------------------------
 If you want to add/modify footers or headers or if you need to add stuff
-into the HEAD element of the html, you can override some includes we made
-to support this usecase.
+into the HEAD element of the HTML, you can override some includes we made
+to support this use case.
 
-Create an custom template directory (not within the repository / code
+Create a custom template directory (not within the repository / code
 directory) and add it to your settings, e.g.::
 
     TEMPLATE_DIRS = ('/srv/nsupdate.info/templates', )
 
-Below that template directory, you can override the builtin templates by
+Below that template directory, you can override the built-in templates by
 just using the same relative name, e.g.:
 
 * includes/base_footer.html (footer of all web UI views)
@@ -261,11 +261,11 @@ directories located below the code directory into YOUR custom template
 directory and then slightly modify it.
 
 As the templates might be cached in memory, you may need to restart your
-wsgi process to have them reloaded.
+WSGI process to have them reloaded.
 
 Note: it is advised that you keep local customizations to a minimum as if you
-override builtin templates with your customized copies, you will have to keep
-your copies in sync with future changes we make to the builtin ones.
+override built-in templates with your customized copies, you will have to keep
+your copies in sync with future changes we make to the built-in ones.
 
 Custom templates
 ----------------
@@ -279,7 +279,7 @@ specific content, some legalese, ...), do it like that:
 * add files like main/custom/foo.html to that directory::
 
     {% extends "base.html" %}
-    {% load bootstrap %}
+    {% load django_bootstrap5 %}
     {% block content %}
     This is content rendered from template "foo.html".
     {% endblock %}
@@ -297,21 +297,22 @@ Maintenance
 Regular jobs
 ------------
 You need to run some commands regularly, we show how to do that on Linux (or
-other POSIX OSes) using user cronjobs (use crontab -e to edit it). Make sure
-it runs as the same user as the nsupdate.info wsgi application::
+other POSIX OSes) using user cron jobs (use crontab -e to edit it). Make sure
+it runs as the same user as the nsupdate.info WSGI application::
 
     PYTHONPATH=/srv/nsupdate.info
     DJANGO_SETTINGS_MODULE=local_settings
+    PATH=/srv/nsupdate.info/env/bin:$PATH
     # reinitialize the test user:
-    50 2 * * * $HOME/env/bin/python $HOME/env/bin/django-admin.py testuser
+    50 2 * * * django-admin testuser
     # reset the fault counters:
-    55 2 * * 6 $HOME/env/bin/python $HOME/env/bin/django-admin.py faults --flag-abuse=150 --reset-client --notify-user
+    55 2 * * 6 django-admin faults --flag-abuse=150 --reset-client --notify-user
     # clear expired sessions from the database, use your correct settings module:
-    0  3 * * * $HOME/env/bin/python $HOME/env/bin/django-admin.py clearsessions
+    0  3 * * * django-admin clearsessions
     # clear outdated registrations:
-    30 3 * * * $HOME/env/bin/python $HOME/env/bin/django-admin.py cleanupregistration
+    30 3 * * * django-admin cleanupregistration
     # check whether the domain nameservers are reachable / answer queries:
-    0  4 * * * $HOME/env/bin/python $HOME/env/bin/django-admin.py domains --check --notify-user
+    0  4 * * * django-admin domains --check --notify-user
 
 
 Dealing with abuse
@@ -329,7 +330,7 @@ set the abuse flag for it. The email will contain instructions for the user
 about how to fix the problem.
 
 So, if you run this weekly, it means that more than 150 client faults per week are
-considered abuse (e.g. if someone runs a stupid cronjob to update the IP instead
+considered abuse (e.g. if someone runs a stupid cron job to update the IP instead
 of a well-behaved update client).
 
 Hosts with the abuse flag set won't accept updates, but the user will be able to
@@ -353,7 +354,7 @@ Dealing with badly configured domains
 -------------------------------------
 
 In the regular jobs example in the previous section,
-django-admin.py domains --check --notify-user means that we'll check all
+django-admin domains --check --notify-user means that we'll check all
 domains that are currently flagged as available.
 
 We query the nameserver configured for the domain and check if it answers a
@@ -364,8 +365,8 @@ If --notify-user is given, we notify the owner of the domain by email if we
 flag the domain as not available. Owner in this context means: the user who
 added the domain to our service.
 
-Please note that we can not check whether the nameserver accepts dynamic
-updates for the domain. The dns admin could have set arbitrary restrictions
+Please note that we cannot check whether the nameserver accepts dynamic
+updates for the domain. The DNS admin could have set arbitrary restrictions
 on this and we do not know them. So if you have a domain configured with the
 service, please make sure that dynamic updates really work.
 
@@ -386,14 +387,14 @@ important hints.
 
 After upgrading the code, you'll usually need to run::
 
-    python manage.py migrate
+    django-admin migrate
 
 This fixes your database schema so it is compatible with the new code.
 
 Maybe you also need the next command (we bundle .mo files, but if you run into
 troubles with them, try this)::
 
-    python manage.py compilemessages
+    django-admin compilemessages
 
 Of course, you'll also need to restart the django/wsgi processes, so the new
 code gets loaded.

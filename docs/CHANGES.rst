@@ -8,32 +8,77 @@ migrations for that version). For upgrading and migration help, please see
 the docs that match the version you are upgrading to.
 
 
-Release 0.13.0 (not released yet)
----------------------------------
+Release 0.13.0 (2026-04-21)
+---------------------------
 
 New Features:
 
-- add BAD_HOSTS setting to lock out nasty clients from the update api
-  without causing database accesses.
-- django-admin faults: show/reset api auth faults counter
-- add api_auth_faults column to django admin's Hosts view
+- New dark theme
+- Update/delete requests: support myip=ip1,ip2, #501
+- Update requests: strip prefix-length / netmask if present, #470.
+  This makes it possible to send ip6lanprefix as myip, for example.
+- Update generated inadyn.conf for IPv6 support, #528
+- Update Fritz!Box router config help v4/v6, #353
+- Update ddclient configuration help, #539.
+  ddclient 3.11+ will send 1 http request using: myip=ipv4,ipv6
+- Add BAD_HOSTS setting to lock out nasty clients from the update API
+  without causing database accesses, #429.
+- Enable blacklisting of email addresses (now with regex support)
+- Add a link to the user in host view of Django admin, #440
+- Add api_auth_faults column to Django admin's Hosts view, #426
+- django-admin faults: show/reset API auth faults counter, #420
 
 Fixes:
 
-- fixed misc. crashes
-- fixed Domain.generate_ns_secret() storing bytes object into Domain.nameserver_update_secret leading to trying to insert the string representation of the bytes object, so 91 characters in a varchar(88)
+- Security: fix session ID leak in IP detection, #625
+- Security: fix mass assignment risk by changing UpdateView to DetailView, #624
+- Fix misc. crashes, #428
+- Fix connectivity test when editing domains, #479, #492, #523, #524
+- Rewrite socket error handling, #522
+- Fix Domain.generate_ns_secret() storing bytes object into Domain.nameserver_update_secret, #454
+- Try longer timeout for DNS resolver / updates
+- Capitalize languages in dropdown menu, #627
+- Django: add missing migration files, #443, #454, #608
+- Logout: use POST request
+- Fix user stale detection, #601
+- Models: use null=False, #458, preventing comments and other text fields from showing up as None
 
 Other changes:
 
-- drop support for python 3.4, fixes #406 - you need either 2.7 or 3.5+.
-- require django >= 1.11.0, run travis-ci tests on django 2.2
-- django compatibility improvements
-- translation updates (removed incomplete ones, added complete ones)
-- improve logging
-- setuptools-scm managing the version and manifest
-- src/ based project layout
-- Add A Well-Known URL for Changing Passwords
+- Require Python >= 3.10, <= 3.14.
+- Upgrade to Django 5.2 LTS, Bootstrap 5.3.8, jQuery 4.0.0, Font Awesome 7.2.0, #613, #615
+- Use argon2id for password and secret hashing, auto-upgrade the hashes
+  at user login time and host dyndns update time, #611
+- Update update_secret database field length for salted hash, #443, #529
+- Translation updates (removed incomplete ones, added complete ones)
+- Improve logging, #422
+- Add a well-known URL for changing passwords
 - Add rel="noopener" to target="_blank" links
+- Add Referrer-Policy, X-XSS-Protection and X-Content-Type-Options HTTP headers, #281, #410
+- Set HTTPONLY to CSRF cookies, #410
+- Add hint if there are no social logins enabled, #520
+- Update to DropboxOAuth2V2, remove non-existing BitbucketOAuth, #516
+- Migrate misc. setup/config files to pyproject.toml, #568, #591
+- Update license identifier to "BSD-3-Clause" in pyproject.toml, #566
+- Use https for misc. links
+- docs:
+
+  - Move CHANGES.rst to docs/
+  - Include note about IPv4 interface ID, #495
+  - Clarify related hosts, #352
+  - Add docs on how to disable user registration, #438
+  - Always use django-admin (not django-admin.py) in docs, update URLs, #443
+  - Fix typos and grammar, #586
+  - Integrate new logo, thanks to @mirzazulfan, #78, #431
+  - Add docs/project.rst (development commands), #516
+  - Update workflow for translations, use the new Transifex CLI (Go), #622
+  - Add "how to release"
+  - README: update CI status badge URL, #630
+  - Misc. other documentation updates and fixes
+- tests:
+
+  - Use GitHub Actions instead of Travis CI, #506, #507
+  - Add testing in Docker, #408, #516
 
 
 Release 0.12.0 (2018-11-18)
@@ -179,16 +224,16 @@ New Features:
 Fixes:
 
 * the link in the registration mail is now https if the site runs with https
-* avoid sending unneccessary "delete" updates to master nameserver - first
-  check if there is something to delete
+* avoid sending unnecessary "delete" updates to the master nameserver - first
+  check whether there is something to delete
 
 Other changes:
 
 * support and require Django >= 1.7
 * remove Python 2.6 support, require 2.7 or 3.3+
 * remove support for "south" migrations (used for 0.9.x and before)
-* add support for django 1.7's builtin migrations
-* misc. layout / UI improvments
+* add support for Django 1.7's built-in migrations
+* misc. layout / UI improvements
 * misc. doc improvements
 * improved original strings in translations, use "trimmed" in django templates
 * upgraded bootstrap
@@ -251,7 +296,7 @@ New Features:
   But please note: if you fail to configure your credentials correctly in your
   update client, we can NOT show that there as we need them to load your host
   record from the database (and to know it is really YOU who is talking to us).
-* add OpenWRT configuration help
+* add OpenWrt configuration help
 * add search field to Host and Domain admin
 
 Fixes:
@@ -326,7 +371,7 @@ Other changes:
   you can use custom templates for this)
 * added some ugly logos (if you can do better ones, please help)
   https://github.com/nsupdate-info/nsupdate.info/issues/78
-* replaced "SSL" by "TLS" everywhere.      
+* replaced "SSL" by "TLS" everywhere.
   SSL is the old/outdated name. Since 1999, it's called TLS.
 * updated to latest versions on CDN: jquery, bootstrap, font-awesome
 

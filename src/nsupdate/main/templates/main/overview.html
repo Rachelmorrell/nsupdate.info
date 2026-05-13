@@ -1,14 +1,18 @@
 {% extends "base.html" %}
-{% load i18n %}{% load bootstrap %}{% load humanize %}
+{% load i18n %}{% load django_bootstrap5 %}{% load humanize %}
 
 {% block content %}
     <div class="row">
-        <div class="col-md-12">
-            <h3>
-                {% trans "Your Hosts" %}
-                <a href="{% url 'add_host' %}" class="btn btn-primary btn-sm">{% trans "Add Host" %}</a>
-            </h3>
-            <table class="table">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="m-0">
+                        {% trans "Your Hosts" %}
+                        <a href="{% url 'add_host' %}" class="btn btn-primary btn-sm ms-3">{% trans "Add Host" %}</a>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <table class="table mb-0">
             <thead>
                 <tr>
                     <th>
@@ -45,9 +49,9 @@
                     <td>{{ host.available|yesno }}</td>
                     <td>{{ host.client_faults }} / {{ host.server_faults }}
                         {% if host.abuse_blocked %}
-                            <br><span class="label label-danger">{% trans "Abuse-Blocked" %}</span>
+                            <br><span class="badge bg-danger">{% trans "Abuse-Blocked" %}</span>
                         {% elif host.abuse %}
-                            <br><span class="label label-warning">{% trans "Abuse" %}</span>
+                            <br><span class="badge bg-warning">{% trans "Abuse" %}</span>
                         {% endif %}
                     </td>
                     {% with ipv4=host.get_ipv4 %}
@@ -56,8 +60,8 @@
                         {% if host.last_update_ipv4 and ipv4 %}
                           ({{ host.last_update_ipv4|naturaltime }},
                           {% if not host.tls_update_ipv4 %}
-                          <span class="label label-warning">{% trans "no" %} {% else %}
-                          <span class="label label-success">{% endif %}{% trans "TLS" %}</span>)
+                          <span class="badge bg-warning">{% trans "no" %} {% else %}
+                          <span class="badge bg-success">{% endif %}{% trans "TLS" %}</span>)
                         {% elif ipv4 %}
                           ({% trans "unknown" %})
                         {% endif %}
@@ -69,8 +73,8 @@
                         {% if host.last_update_ipv6 and ipv6 %}
                           ({{ host.last_update_ipv6|naturaltime }},
                           {% if not host.tls_update_ipv6 %}
-                          <span class="label label-warning">{% trans "no" %} {% else %}
-                          <span class="label label-success">{% endif %}{% trans "TLS" %}</span>)
+                          <span class="badge bg-warning">{% trans "no" %} {% else %}
+                          <span class="badge bg-success">{% endif %}{% trans "TLS" %}</span>)
                         {% elif ipv6 %}
                           ({% trans "unknown" %})
                         {% endif %}
@@ -80,46 +84,54 @@
             {% empty %}
                 <tr><td colspan="5">{% trans "No hosts yet." %}</td></tr>
             {% endfor %}
-            </table>
+                    </table>
+                </div>
+            </div>
         </div>
-        <div class="col-md-12">
-            <h3>
-                {% trans "Domains (yours first, then public)" %}
-                <a href="{% url 'add_domain' %}" class="btn btn-default btn-sm">{% trans "Add Domain" %}</a>
-            </h3>
-            <table class="table">
-            <thead>
-                <tr>
-                    <th>{% trans "Domain" %}</th>
-                    <th>{% trans "Public" %}</th>
-                    <th>{% trans "Available" %}</th>
-                    <th>{% trans "Owner" %}</th>
-                    <th>{% trans "Comment" %}</th>
-                </tr>
-            </thead>
-            {% for domain in your_domains %}
-                <tr>
-                    <td><a href="{% url 'domain_view' domain.pk %}">{{ domain.name }}</a></td>
-                    <td>{{ domain.public|yesno }}</td>
-                    <td>{{ domain.available|yesno }}</td>
-                    <td>{{ domain.created_by }}</td>
-                    <td>{{ domain.comment }}</td>
-                </tr>
-            {% empty %}
-                <tr><td colspan="5">{% trans "No domains from you yet." %}</td></tr>
-            {% endfor %}
-            {% for domain in public_domains %}
-                <tr>
-                    <td>{{ domain.name }}</td>
-                    <td>{{ domain.public|yesno }}</td>
-                    <td>{{ domain.available|yesno }}</td>
-                    <td>{{ domain.created_by }}</td>
-                    <td>{{ domain.comment }}</td>
-                </tr>
-            {% empty %}
-                <tr><td colspan="5">{% trans "No public domains from other users yet." %}</td></tr>
-            {% endfor %}
-            </table>
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="m-0">
+                        {% trans "Domains (yours first, then public)" %}
+                        <a href="{% url 'add_domain' %}" class="btn btn-primary btn-sm ms-3">{% trans "Add Domain" %}</a>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>{% trans "Domain" %}</th>
+                        <th>{% trans "Public" %}</th>
+                        <th>{% trans "Available" %}</th>
+                        <th>{% trans "Owner" %}</th>
+                        <th>{% trans "Comment" %}</th>
+                    </tr>
+                </thead>
+                {% for domain in your_domains %}
+                    <tr>
+                        <td><a href="{% url 'domain_view' domain.pk %}">{{ domain.name }}</a></td>
+                        <td>{{ domain.public|yesno }}</td>
+                        <td>{{ domain.available|yesno }}</td>
+                        <td>{{ domain.created_by }}</td>
+                        <td>{{ domain.comment }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">{% trans "No domains from you yet." %}</td></tr>
+                {% endfor %}
+                {% for domain in public_domains %}
+                    <tr>
+                        <td>{{ domain.name }}</td>
+                        <td>{{ domain.public|yesno }}</td>
+                        <td>{{ domain.available|yesno }}</td>
+                        <td>{{ domain.created_by }}</td>
+                        <td>{{ domain.comment }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">{% trans "No public domains from other users yet." %}</td></tr>
+                {% endfor %}
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}

@@ -1,27 +1,30 @@
 {% extends "base.html" %}
-{% load i18n %}{% load bootstrap %}
+{% load i18n %}{% load django_bootstrap5 %}
 
 {% block content %}
     <div class="row">
         <div class="col-md-6">
-            <div class="well well-sm">
+            <div class="card card-body p-2 mb-4">
                 <h3>{% trans "Create a new Host" %}</h3>
                 <form method="post" action="">
                     {% csrf_token %}
-                    {{ form|bootstrap }}
+                    {% bootstrap_form form %}
                     <button type="submit" class="btn btn-primary">{% trans "Create" %}</button>
                 </form>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="well well-sm">
-                <h3>{% trans "Help" %}</h3>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="m-0">{% trans "Help" %}</h3>
+                </div>
+                <div class="card-body">
                 <p>{% trans "Here you can add new hosts (like routers, PCs, servers, ...)." %}
                 </p>
                 <p>
                     {% blocktrans trimmed %}
                     You need to be able to configure one of your machines so it sends dyndns2 compatible
-                    updates to us when your IP changes. Routers usually have some builtin software that does
+                    updates to us when your IP changes. Routers usually have some built-in software that does
                     this, but you can also use some software on another system (like a PC or server).
                     {% endblocktrans %}
                 </p>

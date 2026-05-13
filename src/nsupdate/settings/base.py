@@ -1,11 +1,11 @@
 """
-Django settings for nsupdate project
+Django settings for the nsupdate project.
 
-Note: do not directly use these settings, rather use "dev" or "prod".
+Note: Do not directly use these settings; use "dev" or "prod" instead.
 """
 
-# Note: django internally first loads its own defaults and then loads the
-# project's settings on top of that. Due to this, no import * is required here.
+# Note: Django internally first loads its own defaults and then loads the
+# project's settings on top of that. Due to this, no "import *" is required here.
 
 import os
 
@@ -43,13 +43,15 @@ DATABASES = {
     }
 }
 
-# these useragents are unacceptable for /nic/update service
-BAD_AGENTS = set([])  # list can have str elements
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'  # == 32bit integer
 
-# these IPAdresses and/or IPNetworks are unacceptable for /nic/update service
-# like e.g. IPs of servers related to illegal activities
-from netaddr import IPSet, IPAddress, IPNetwork
-BAD_IPS_HOST = IPSet([])  # inner list can have IPAddress and IPNetwork elements
+# These user agents are unacceptable for the /nic/update service.
+BAD_AGENTS = set([])  # List can have str elements.
+
+# These IP addresses and/or IP networks are unacceptable for the /nic/update service,
+# like, e.g., IPs of servers related to illegal activities.
+from netaddr import IPSet
+BAD_IPS_HOST = IPSet([])  # Inner list can have IPAddress and IPNetwork elements.
 
 # when encountering these hostnames (fqdn), block them early/silently from
 # api usage. avoid any database access, so if someone tries to update
@@ -60,7 +62,7 @@ BAD_HOSTS = set([])
 # nameservers used e.g. for MX lookups in the registration email validation.
 # google / cloudflare DNS IPs are only given as example / fallback -
 # please configure your own nameservers in your local settings file.
-NAMESERVERS = ['8.8.8.8', '1.1.1.1', ]
+NAMESERVERS = ['8.8.8.8', '1.1.1.1']
 
 # registration email validation: disallow specific email patterns,
 # e.g. domains that have a non-working mx / that are frequently abused.
@@ -88,10 +90,6 @@ SITE_ID = 1
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
 USE_I18N = True
-
-# If you set this to False, Django will not format dates, numbers and
-# calendars according to the current locale.
-USE_L10N = True
 
 # If you set this to False, Django will not use timezone-aware datetimes.
 USE_TZ = True
@@ -153,7 +151,6 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'social_django.context_processors.backends',
                 'social_django.context_processors.login_redirect',
-
             ],
             'loaders': [
                 'django.template.loaders.filesystem.Loader',
@@ -195,7 +192,7 @@ INSTALLED_APPS = (
     'nsupdate.accounts',
     'nsupdate.api',
     'nsupdate.main',
-    'bootstrapform',
+    'django_bootstrap5',
     'django.contrib.admin',
     'registration',
     'django_extensions',
@@ -293,22 +290,26 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 10 * 60 * 60  # 10 hours, in seconds (remember_me is True), see #381
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # more safe (remember_me is False)
 
-# Allow SHA1 for host update secrets
 PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.BCryptPasswordHasher',
-    'django.contrib.auth.hashers.SHA1PasswordHasher',
+    'nsupdate.main.hashers.WeakArgon2PasswordHasher',  # for update_secret
+    # Running Django 4.2, we used its "sha1" hasher for update_secret until 2026.
+    # But Django 5.x removed the "sha1" hasher.
+    # As we can only change the hashed update_secret in the database when
+    # a host is updated (and gives us the cleartext password), we will
+    # need to keep this copy for quite a while:
+    'nsupdate.main.hashers.SHA1PasswordHasher',
 ]
 
 # python-social-auth settings
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.amazon.AmazonOAuth2',
-    'social_core.backends.bitbucket.BitbucketOAuth',
     'social_core.backends.disqus.DisqusOAuth2',
-    'social_core.backends.dropbox.DropboxOAuth',
+    'social_core.backends.dropbox.DropboxOAuth2V2',
     'social_core.backends.github.GithubOAuth2',
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.reddit.RedditOAuth2',
@@ -392,7 +393,6 @@ SOCIAL_AUTH_USERNAME_IS_FULL_EMAIL = True
 #    urllib2.urlopen uses socket.getdefaulttimeout() value by default, so setting socket.setdefaulttimeout(...) will
 #    affect urlopen when this setting is not defined, otherwise this setting takes precedence. Also this might affect
 #    other places in Django.
-#    timeout argument was introduced in python 2.6 according to urllib2 documentation
 
 # SOCIAL_AUTH_<BACKEND_NAME>_WHITELISTED_DOMAINS = ['foo.com', 'bar.com']
 #    Supply a list of domain names to be white-listed. Any user with an email address on any of the allowed domains will
@@ -420,7 +420,7 @@ SOCIAL_AUTH_USERNAME_IS_FULL_EMAIL = True
 #    In this case foo field's value will be stored when user follows this link
 #    <a href="{% url socialauth_begin 'github' %}?foo=bar">...</a>.
 
-# we need slightly different classes for bootstrap3 than the default ones
+# We need slightly different classes for Bootstrap 3 than the default ones.
 from django.contrib.messages import constants
 MESSAGE_TAGS = {
     constants.DEBUG: '',
@@ -441,9 +441,8 @@ LANGUAGES = (
     ('el', gettext_noop('Greek')),
     ('fr', gettext_noop('French')),
     ('it', gettext_noop('Italian')),
-    # ('es', gettext_noop('Spanish')),
-    # ('zh-cn', gettext_noop('Chinese (China)')),
+    ('hu', gettext_noop('Hungarian')),
 )
 
-# silences 1_6.W001 warning you get without this:
+# Silences the 1_6.W001 warning you get without this.
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'

@@ -1,12 +1,11 @@
 """
-try to identify users / hosts doing illegal / questionable things
+Try to identify users/hosts doing illegal or questionable things.
 """
 
 import time
 from collections import defaultdict
 
 from django.core.management.base import BaseCommand
-from django.db import transaction
 from django.db.utils import OperationalError
 
 from nsupdate.main.models import Host
@@ -14,7 +13,7 @@ from nsupdate.main import dnstools
 
 
 class Command(BaseCommand):
-    help = 'try to identify users / hosts doing illegal / questionable things'
+    help = 'Identify users/hosts doing illegal or questionable things.'
 
     def handle(self, *args, **options):
         ip_to_hosts = defaultdict(list)
@@ -51,7 +50,7 @@ class Command(BaseCommand):
                             user.delete()
                             break
                         except OperationalError:
-                            # database is locked
+                            # Database is locked.
                             time.sleep(0.1)
                 if response.lower() == 'a':
                     break

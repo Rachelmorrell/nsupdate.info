@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}{% load bootstrap %}
+{% load i18n %}{% load django_bootstrap5 %}
 
 {% block content %}
     <div class="alert alert-warning" role="alert">
@@ -9,23 +9,26 @@
     </div>
     <div class="row">
         <div class="col-md-6">
-            <div class="well well-sm">
+                        <div class="card card-body p-2 mb-4">
                 <h3>{% trans "Add a new Domain" %}</h3>
                 <form method="post" action="">
                     {% csrf_token %}
-                    {{ form|bootstrap }}
+                    {% bootstrap_form form %}
                     <button type="submit" class="btn btn-primary">{% trans "Add" %}</button>
                 </form>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="well well-sm">
-                <h3>{% trans "Help" %}</h3>
+                        <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="m-0">{% trans "Help" %}</h3>
+                </div>
+                <div class="card-body">
                 <p>
                     {% blocktrans trimmed %}
                         Here you can add new domains (zones) which you control (and this is only
                         useful if you
-                        have some own zone which you can update automatically).
+                        have your own zone which you can update automatically).
                     {% endblocktrans %}
                 </p>
                 <p>

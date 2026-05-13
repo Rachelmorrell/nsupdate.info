@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% load i18n %}{% load bootstrap %}
+{% load i18n %}{% load django_bootstrap5 %}
 
 {% block content %}
-    <div class="jumbotron">
+    <div class="p-3 mb-2 jumbotron-replacement rounded-3">
         <h2>{% trans "Browser-based Updater" %}</h2>
         <p>
             {% blocktrans trimmed %}
@@ -11,7 +11,7 @@
         </p>
         <noscript>
             <p class="text-danger">
-                {% trans "The browser based updater only works if javascript is enabled." %}
+                {% trans "The browser-based updater only works if JavaScript is enabled." %}
             </p>
         </noscript>
         <h2>{% trans "Updater Status" %}</h2>

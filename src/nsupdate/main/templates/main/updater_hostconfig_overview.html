@@ -1,11 +1,15 @@
 {% extends "base.html" %}
-{% load i18n %}{% load bootstrap %}
+{% load i18n %}{% load django_bootstrap5 %}
 
 {% block content %}
     <div class="row">
         <div class="col-lg-12">
-            <h3>{% trans "Your updater configurations for other services" %}</h3>
-            <table class="table">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="m-0">{% trans "Your updater configurations for other services" %}</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table mb-0">
             <thead>
                 <tr>
                     <th>{% trans "Service" %}</th>
@@ -26,29 +30,39 @@
             {% empty %}
                 <tr><td colspan="5">{% trans "No other services to update yet." %}</td></tr>
             {% endfor %}
-            </table>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
     <hr>
 
     <div class="row">
         <div class="col-lg-6">
-            <div class="well well-sm">
-                <h3>{% trans "Create a new updater configuration" %}</h3>
-                <form method="post" action="">
-                    {% csrf_token %}
-                    {{ form|bootstrap }}
-                    <button type="submit" class="btn btn-primary">{% trans "Create" %}</button>
-                </form>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="m-0">{% trans "Create a new updater configuration" %}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="">
+                        {% csrf_token %}
+                        {% bootstrap_form form %}
+                        <button type="submit" class="btn btn-primary">{% trans "Create" %}</button>
+                    </form>
+                </div>
             </div>
         </div>
         <div class="col-lg-6">
-            <div class="well well-sm">
-                <h3>{% trans "Help" %}</h3>
-                <p>{% trans "Here you can add new configurations for 3rd party services you like to get updated." %}
-                </p>
-                <p>{% trans "We will send an update to them each time you update your host with us." %}
-                </p>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="m-0">{% trans "Help" %}</h3>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{% trans "Here you can add new configurations for 3rd party services you would like to get updated." %}
+                    </p>
+                    <p class="card-text">{% trans "We will send an update to them each time you update your host with us." %}
+                    </p>
+                </div>
             </div>
         </div>
     </div>
